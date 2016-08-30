@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <style>body{padding:0px;margin:0px;position:absolute;top:0px;left:0px;bottom:0px;right:0px;overflow:hidden;}</style>
+    <script src="js/three.min.js"></script>
+    <script src="js/OrbitControls.js"></script>
+  </head>
+  <body>
+  <script>
+  	'use strict'
+
+    var width  = window.innerWidth
+      , height = window.innerHeight
+      , full_tile = 64
+      , half_tile = full_tile * 0.5
+      , border_width = 4
+
+
+    // websocket connection
+	var socket = new WebSocket("ws://127.0.0.1:2794", "rust-websocket");
+	socket.onmessage = function (event) {
+
+		/*
+		var data = JSON.parse(event.data)
+
+      	if (scene !== undefined) {
+        	// console.log('Tile ['+ data.grid_x +', '+ data.grid_y +']')
+  		  	data.forEach(function(vec2, i) {
+	          	var geometry = new THREE.SphereGeometry(0.12, 32, 32)
+	              , material = new THREE.MeshBasicMaterial({ color: 0xff9000 })
+	              , sphere = new THREE.Mesh(geometry, material)
+	              , x = vec2.x * full_tile - half_tile
+	              , z = vec2.y * full_tile - half_tile
+	          	sphere.position.set(x, 0, z)
+	          	scene.add(sphere)
+	        })
+		}
+		*/
+
+		console.log(event.data);
+	}
+
+	function send(element) {
+		// var input = document.getElementById(element);
+		// socket.send(input.value);
+		// input.value = "";
+	}
+
+    // define the scene graph
+    var scene    = new THREE.Scene()
+      , camera   = new THREE.PerspectiveCamera(40, width / height, 0.1, 10000)
+      , renderer = new THREE.WebGLRenderer({ antialias: true })
+      , controls = new THREE.OrbitControls(camera)
+
+    // main
+    function init() {
+      var light = new THREE.DirectionalLight(0xffffff, 0.8)
+      light.position.set(-10, 150, 20)
+      light.target.position.set(0, 0, 0)
+      scene.add(light)
+
+      scene.add(new THREE.AmbientLight(0x202020))
+      scene.add(new THREE.AxisHelper(10))
+
+      // outline
+      var line_material = new THREE.LineBasicMaterial({ color: 0x808080 })
+      var geometry = new THREE.Geometry()
+      geometry.vertices.push(
+        new THREE.Vector3(-(half_tile + border_width),  0,  (half_tile + border_width)),
+        new THREE.Vector3( (half_tile + border_width),  0,  (half_tile + border_width)),
+        new THREE.Vector3( (half_tile + border_width),  0, -(half_tile + border_width)),
+        new THREE.Vector3(-(half_tile + border_width),  0, -(half_tile + border_width)),
+        new THREE.Vector3(-(half_tile + border_width),  0,  (half_tile + border_width))
+      )
+      var line = new THREE.Line(geometry, line_material)
+      scene.add(line)
+
+      camera.position.set(120, 30, 120)
+      renderer.setSize(width, height)
+      renderer.setPixelRatio(window.devicePixelRatio)
+
+      document.body.appendChild(renderer.domElement)
+      window.addEventListener('resize', resize, false)
+    }
+
+    function animate() {
+      requestAnimationFrame(animate)      // start the animation loop
+
+      // update
+      camera.lookAt(scene.position)
+      controls.update()
+
+      // render
+      renderer.render(scene, camera)
+    }
+
+    function resize() {
+      width  = window.innerWidth
+      height = window.innerHeight
+      renderer.setSize(width, height)
+      camera.aspect = width / height
+      camera.updateProjectionMatrix()
+    }
+
+    init()
+    animate()
+
+  </script>
+  </body>
+</html>
